@@ -3,7 +3,8 @@
 
 //cool thing is 17:19:21 and move the 17 around to 18 and 16 — nice progression
 
-//for DKV: press button 1 on midi device to detuneB, 2 to detune C and 3 to follow traveller.
+//for DKV: press button 1 on launch control to detuneB, 2 to detune C and 3 to follow traveller.
+//turn knob 1 (above button 1) to set volume. start at 0!!
 
 import processing.sound.*;
 import nervoussystem.obj.*; //for outputing 3D file
@@ -31,9 +32,9 @@ float baseFreq = 220.0;
 float theta1 = 0;  
 float theta2 = 0;
 float theta3 = 0;
-public float theta1Incr = 4.0;
-public float theta2Incr = 5.0;
-public float theta3Incr = 6.0;
+public float theta1Incr = 0.0;
+public float theta2Incr = 0.0;
+public float theta3Incr = 0.0;
 public float thetaScaleFactorMultiplier = 0.006; //was 0.007 before
 int iterations = 35000;
 int maxIterations = 140000;
@@ -80,12 +81,12 @@ int lowestTriadNote = 21; //don't listen to midi above this for triad notes
 int midiControllerFaderNumbers[] = {41, 42, 43, 44, 45, 46, 47, 48}; //midi controller number for the faders 
 int midiControllerButtonNumbers[] = {1, 2, 3, 4, 5, 6, 7, 8}; //midi controller number for the buttons 
 
-float sineVolume = 0.2; 
+float sineVolume = 0.0; 
 float sineFreq2, sineFreq3;
 
 void setup() {
-  //size(1400, 800, P3D);
-  fullScreen(P3D, 1);
+  size(1400, 800, P3D);
+  //fullScreen(P3D, 1);
   //pixelDensity(displayDensity());
   pixelDensity(2);
   smooth();
@@ -226,8 +227,18 @@ void setup() {
      sine[i] = new SinOsc(this);
   }
   
+  if (theta2Incr > 0) {
   sineFreq2 = baseFreq*theta2Incr/theta1Incr;
-  sineFreq3 = baseFreq*theta3Incr/theta1Incr; 
+  } else
+  {
+  sineFreq2 = 1;
+  }
+  if (theta3Incr > 0) {
+  sineFreq3 = baseFreq*theta3Incr/theta1Incr;
+  } else
+  {
+  sineFreq3 = 1;
+  }
   
   //.set(freq, amp, add, pos)
   sine[0].set(baseFreq, sineVolume, 0, 0);
@@ -385,14 +396,12 @@ endShape();
   
   //cp5.draw();
   
-  sine[0].amp(sineVolume);
-  sine[1].amp(sineVolume);
-  sine[2].amp(sineVolume);
+  //SOUND 
   
   sine[0].freq(baseFreq);
   sine[1].freq(sineFreq2);
   sine[2].freq(sineFreq3);
-   if(detuneB==1){  //cheating here so that we can hear the out of tuneness faster
+   if(detuneB==1){  //cheating here (decoupling from the visual) so that we can hear the out of tuneness faster
     sineFreq2 += audioDetuneAmountPerFrame2;
   }
     if(detuneC==1){
@@ -459,63 +468,63 @@ void decrementRotation(){
 }
 
 //for checkboxes
-void controlEvent(ControlEvent theEvent) {
-  if (theEvent.isFrom(checkBox)) {
-      shouldRotate = (int)checkBox.getArrayValue()[0];
-      detuneB = (int)checkBox.getArrayValue()[1];
-      detuneC = (int)checkBox.getArrayValue()[2];
-      cameraFollowsTraveller = (int)checkBox.getArrayValue()[3];
-      travellerOn = (int)checkBox.getArrayValue()[4];
-      showAxes = (int)checkBox.getArrayValue()[5];
-  }
-    if (theEvent.isFrom(iterationSlider)) {
-      iterations = int(exp(iterationsLog+logSlope));
-  }
+//void controlEvent(ControlEvent theEvent) {
+//  if (theEvent.isFrom(checkBox)) {
+//      shouldRotate = (int)checkBox.getArrayValue()[0];
+//      detuneB = (int)checkBox.getArrayValue()[1];
+//      detuneC = (int)checkBox.getArrayValue()[2];
+//      cameraFollowsTraveller = (int)checkBox.getArrayValue()[3];
+//      travellerOn = (int)checkBox.getArrayValue()[4];
+//      showAxes = (int)checkBox.getArrayValue()[5];
+//  }
+//    if (theEvent.isFrom(iterationSlider)) {
+//      iterations = int(exp(iterationsLog+logSlope));
+//  }
   
   
-}
+//}
 
-public void Natural_Major_Triad(int theValue) {
-    theta1Incr = 4;
-theta2Incr = 5;
-theta3Incr = 6;
-  cp5.getController("theta1Incr").setValue(theta1Incr);
-cp5.getController("theta2Incr").setValue(theta2Incr);
-cp5.getController("theta3Incr").setValue(theta3Incr);
-}
+//public void Natural_Major_Triad(int theValue) {
+//    theta1Incr = 4;
+//theta2Incr = 5;
+//theta3Incr = 6;
+//  cp5.getController("theta1Incr").setValue(theta1Incr);
+//cp5.getController("theta2Incr").setValue(theta2Incr);
+//cp5.getController("theta3Incr").setValue(theta3Incr);
+//}
 
-public void Equal_Tempered_Major_Triad(int theValue) {
-  theta1Incr = 4;
-theta2Incr = 4.0*pow(twelthRootOfTwo,4);
-theta3Incr = 4.0*pow(twelthRootOfTwo,7);
-  cp5.getController("theta1Incr").setValue(theta1Incr);
-cp5.getController("theta2Incr").setValue(theta2Incr);
-cp5.getController("theta3Incr").setValue(theta3Incr);
-  theta1Incr = 4;
-theta2Incr = 4.0*pow(twelthRootOfTwo,4);
-theta3Incr = 4.0*pow(twelthRootOfTwo,7);
-}
+//public void Equal_Tempered_Major_Triad(int theValue) {
+//  theta1Incr = 4;
+//theta2Incr = 4.0*pow(twelthRootOfTwo,4);
+//theta3Incr = 4.0*pow(twelthRootOfTwo,7);
+//  cp5.getController("theta1Incr").setValue(theta1Incr);
+//cp5.getController("theta2Incr").setValue(theta2Incr);
+//cp5.getController("theta3Incr").setValue(theta3Incr);
+//  theta1Incr = 4;
+//theta2Incr = 4.0*pow(twelthRootOfTwo,4);
+//theta3Incr = 4.0*pow(twelthRootOfTwo,7);
+//}
 
-public void Natural_Minor_Triad(int theValue) {
-    theta1Incr = 10;
-theta2Incr = 12;
-theta3Incr = 15;
-  cp5.getController("theta1Incr").setValue(theta1Incr);
-cp5.getController("theta2Incr").setValue(theta2Incr);
-cp5.getController("theta3Incr").setValue(theta3Incr);
-}
+//public void Natural_Minor_Triad(int theValue) {
+//    theta1Incr = 10;
+//theta2Incr = 12;
+//theta3Incr = 15;
+//  cp5.getController("theta1Incr").setValue(theta1Incr);
+//cp5.getController("theta2Incr").setValue(theta2Incr);
+//cp5.getController("theta3Incr").setValue(theta3Incr);
+//}
 
-public void Equal_Tempered_Minor_Triad(int theValue) {
-  theta1Incr = 10;
-theta2Incr = 10.0*pow(twelthRootOfTwo,3);
-theta3Incr = 10.0*pow(twelthRootOfTwo,7);
-  cp5.getController("theta1Incr").setValue(theta1Incr);
-cp5.getController("theta2Incr").setValue(theta2Incr);
-cp5.getController("theta3Incr").setValue(theta3Incr);
-  theta1Incr = 10;
-theta2Incr = 10.0*pow(twelthRootOfTwo,3);
-theta3Incr = 10.0*pow(twelthRootOfTwo,7);
-}
+//public void Equal_Tempered_Minor_Triad(int theValue) {
+//  theta1Incr = 10;
+//theta2Incr = 10.0*pow(twelthRootOfTwo,3);
+//theta3Incr = 10.0*pow(twelthRootOfTwo,7);
+//  cp5.getController("theta1Incr").setValue(theta1Incr);
+//cp5.getController("theta2Incr").setValue(theta2Incr);
+//cp5.getController("theta3Incr").setValue(theta3Incr);
+//  theta1Incr = 10;
+//theta2Incr = 10.0*pow(twelthRootOfTwo,3);
+//theta3Incr = 10.0*pow(twelthRootOfTwo,7);
+//}
 
 
 void noteOn(int channel, int pitch, int velocity) {
@@ -592,6 +601,10 @@ void noteOn(int channel, int pitch, int velocity) {
       sineFreq2 = baseFreq*theta2Incr/theta1Incr;
       sineFreq3 = baseFreq*theta3Incr/theta1Incr; 
       
+      sine[0].freq(baseFreq);
+      sine[1].freq(sineFreq2);
+      sine[2].freq(sineFreq3);
+      
     }
     
   }
@@ -643,6 +656,9 @@ void controllerChange(int channel, int number, int value) {
     if (number == midiControllerFaderNumbers[0]) {
       sineVolume = value / 127.0 * 0.4;
       print("velocity changed ");
+      sine[0].amp(sineVolume);
+      sine[1].amp(sineVolume);
+      sine[2].amp(sineVolume);
     }
     
 
