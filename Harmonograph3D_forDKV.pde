@@ -3,6 +3,8 @@
 
 //cool thing is 17:19:21 and move the 17 around to 18 and 16 — nice progression
 
+//for DKV: press button 1 on midi device to detuneB, 2 to detune C and 3 to follow traveller.
+
 import processing.sound.*;
 import nervoussystem.obj.*; //for outputing 3D file
 boolean recordObj = false;
@@ -18,7 +20,7 @@ float rotIncr = .1;
 PVector camDir, camPos; 
 float camRotY=-PI; //camera azimuth angle
 float camRotX=0; //camera elevation angle
-float rotationSpeed = 0.01;
+float rotationSpeed = 0.006;
 int shouldRotate = 1;
 
 float rotThetaY=0;
@@ -42,6 +44,8 @@ int detuneB = 0;
 int detuneC = 0;
 float detuneAmountPerFrame2 = 0.00002;
 float detuneAmountPerFrame3 = -0.00002;
+float audioDetuneAmountPerFrame2 = 0.01;
+float audioDetuneAmountPerFrame3 = -0.01;
 float mouseDeltaX=0;
 float mouseDeltaY=0;
 
@@ -58,6 +62,7 @@ int travellerOn = 1;
 PVector travellerModelOrig = new PVector(0,0,0);
 PVector travellerModelDest = new PVector(0,0,0);
 int travellerLength = 2; //at least 2!
+float travellerSpeedMultiplier = 0.002;
 
 int showAxes = 0;
 
@@ -76,6 +81,7 @@ int midiControllerFaderNumbers[] = {41, 42, 43, 44, 45, 46, 47, 48}; //midi cont
 int midiControllerButtonNumbers[] = {1, 2, 3, 4, 5, 6, 7, 8}; //midi controller number for the buttons 
 
 float sineVolume = 0.2; 
+float sineFreq2, sineFreq3;
 
 void setup() {
   //size(1400, 800, P3D);
@@ -89,8 +95,9 @@ void setup() {
   frameRate(64);
   
   MidiBus.list();
-  //midiBusKeyboard = new MidiBus(this, "Port1", "Port1");  //change 2nd one for DKV if not using MIDI interface
-  midiBusKeyboard = new MidiBus(this, "CME U2MIDI", "Port1");  //change 2nd one for DKV if not using MIDI interface
+  //midiBusKeyboard = new MidiBus(this, "Port1", "Port1");  //for DKV
+  //midiBusKeyboard = new MidiBus(this, "CME U2MIDI", "Port1");  //for MIDI Interface
+  midiBusKeyboard = new MidiBus(this, "Keystation Mini 32", "Keystation Mini 32");  //for Keystation Mini
   midiBusLaunchControl = new MidiBus(this, "Launch Control", "");  
   
   
@@ -218,10 +225,14 @@ void setup() {
   for (int i = 0; i<3; i++){
      sine[i] = new SinOsc(this);
   }
+  
+  sineFreq2 = baseFreq*theta2Incr/theta1Incr;
+  sineFreq3 = baseFreq*theta3Incr/theta1Incr; 
+  
   //.set(freq, amp, add, pos)
   sine[0].set(baseFreq, sineVolume, 0, 0);
-  sine[1].set(baseFreq*theta2Incr/theta1Incr, sineVolume, 0, 0);
-  sine[2].set(baseFreq*theta3Incr/theta1Incr, sineVolume, 0, 0);
+  sine[1].set(sineFreq2, sineVolume, 0, 0);
+  sine[2].set(sineFreq3, sineVolume, 0, 0);
   
     for (int i = 0; i<3; i++){
      sine[i].play();
@@ -245,11 +256,12 @@ void draw() {
    
     int j = mySlowCounter;
     float thetaScaleFactor = 5/((theta1Incr+theta2Incr+theta3Incr)/3.0) * thetaScaleFactorMultiplier;
+    float travellerSpeed = 5/((theta1Incr+theta2Incr+theta3Incr)/3.0) * travellerSpeedMultiplier;
     PVector[] travellerCoords = new PVector[travellerLength];
     for (int i = 0; i<travellerLength; i++){ 
-      travellerCoords[i] = new PVector(sin(theta1+(j+i*2)*theta1Incr*thetaScaleFactor)*scaleFactor, 
-        sin(theta2+(j+i*2)*theta2Incr*thetaScaleFactor+phaseB)*scaleFactor, 
-        sin(theta3+(j+i*2)*theta3Incr*thetaScaleFactor+phaseC)*scaleFactor);
+      travellerCoords[i] = new PVector(sin(theta1+(j+i*6)*theta1Incr*travellerSpeed)*scaleFactor, 
+        sin(theta2+(j+i*6)*theta2Incr*travellerSpeed+phaseB)*scaleFactor, 
+        sin(theta3+(j+i*6)*theta3Incr*travellerSpeed+phaseC)*scaleFactor);
     }
     PVector camDirTemp=camDir;
     PVector camPosTemp=camPos;
@@ -322,13 +334,17 @@ void draw() {
   }  
   
 
+noFill();
+beginShape();
+
     for (int i=0; i<iterations; i++){
-    stroke(255,255);
-    strokeWeight(0.5);
-    line(sin(theta1+i*theta1Incr*thetaScaleFactor)*scaleFactor, sin(theta2+i*theta2Incr*thetaScaleFactor+phaseB)*scaleFactor, sin(theta3+i*theta3Incr*thetaScaleFactor+phaseC)*scaleFactor,
-    sin(theta1+(i+1)*theta1Incr*thetaScaleFactor)*scaleFactor, sin(theta2+(i+1)*theta2Incr*thetaScaleFactor+phaseB)*scaleFactor, sin(theta3+(i+1)*theta3Incr*thetaScaleFactor+phaseC)*scaleFactor);
+    stroke(255);
+    strokeWeight(0.6);
+    vertex(sin(theta1+i*theta1Incr*thetaScaleFactor)*scaleFactor, sin(theta2+i*theta2Incr*thetaScaleFactor+phaseB)*scaleFactor, sin(theta3+i*theta3Incr*thetaScaleFactor+phaseC)*scaleFactor);
     }
     
+endShape();
+
   if (recordObj) {
     endRecord();
     recordObj = false;
@@ -367,15 +383,21 @@ void draw() {
     //text("travelX:"+str(origin.x)+"    travelY:"+str(origin.y)+"    travelZ:"+str(origin.z),800,40);
     
   
-  cp5.draw();
+  //cp5.draw();
   
   sine[0].amp(sineVolume);
   sine[1].amp(sineVolume);
   sine[2].amp(sineVolume);
   
   sine[0].freq(baseFreq);
-  sine[1].freq(baseFreq*theta2Incr/theta1Incr);
-  sine[2].freq(baseFreq*theta3Incr/theta1Incr);
+  sine[1].freq(sineFreq2);
+  sine[2].freq(sineFreq3);
+   if(detuneB==1){  //cheating here so that we can hear the out of tuneness faster
+    sineFreq2 += audioDetuneAmountPerFrame2;
+  }
+    if(detuneC==1){
+    sineFreq3 += audioDetuneAmountPerFrame3;
+  }
   
 
 }
@@ -566,6 +588,9 @@ void noteOn(int channel, int pitch, int velocity) {
       //cp5.getController("theta1Incr").setValue(theta1Incr);
       //cp5.getController("theta2Incr").setValue(theta2Incr);
       //cp5.getController("theta3Incr").setValue(theta3Incr);
+      
+      sineFreq2 = baseFreq*theta2Incr/theta1Incr;
+      sineFreq3 = baseFreq*theta3Incr/theta1Incr; 
       
     }
     
